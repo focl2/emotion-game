@@ -23,11 +23,16 @@
     <div id="status">Скажи что-нибудь в микрофон!</div>
 
     <script>
-        const emotionColors = { calm: "blue", happy: "yellow", angry: "red", neutral: "green" };
+        const emotionColors = {
+            calm: "blue",
+            happy: "yellow",
+            angry: "red",
+            neutral: "green"
+        };
 
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
-                const audioContext = new AudioContext();
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const analyzer = audioContext.createAnalyser();
                 const microphone = audioContext.createMediaStreamSource(stream);
                 
@@ -40,20 +45,30 @@
                 setInterval(() => {
                     analyzer.getByteFrequencyData(dataArray);
                     
-                    let highFreq = 0, lowFreq = 0;
+                    let highFreq = 0;
+                    let lowFreq = 0;
+                    
                     for (let i = 0; i < bufferLength; i++) {
                         if (i < bufferLength / 2) lowFreq += dataArray[i];
                         else highFreq += dataArray[i];
                     }
 
-                    let emotion = (highFreq > lowFreq * 1.5) ? "happy" :
-                                  (lowFreq > highFreq * 1.5) ? "angry" : "calm";
+                    let emotion;
+                    if (highFreq > lowFreq * 1.5) {
+                        emotion = "happy";
+                    } else if (lowFreq > highFreq * 1.5) {
+                        emotion = "angry";
+                    } else {
+                        emotion = "calm";
+                    }
 
                     document.body.style.background = emotionColors[emotion];
                     document.getElementById("status").textContent = `Эмоция: ${emotion}`;
                 }, 500);
             })
-            .catch(() => alert("Нужно разрешить доступ к микрофону!"));
+            .catch(err => {
+                alert("Нужно разрешить доступ к микрофону!");
+            });
     </script>
 </body>
 </html>
