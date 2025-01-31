@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Эмоциональный цвет!</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            transition: background 0.5s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial;
+        }
+        #status {
+            font-size: 24px;
+            color: white;
+            text-shadow: 2px 2px 4px black;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">Скажи что-нибудь в микрофон!</div>
+
+    <script>
+        const emotionColors = { calm: "blue", happy: "yellow", angry: "red", neutral: "green" };
+
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                const audioContext = new AudioContext();
+                const analyzer = audioContext.createAnalyser();
+                const microphone = audioContext.createMediaStreamSource(stream);
+                
+                microphone.connect(analyzer);
+                analyzer.fftSize = 256;
+                
+                const bufferLength = analyzer.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                setInterval(() => {
+                    analyzer.getByteFrequencyData(dataArray);
+                    
+                    let highFreq = 0, lowFreq = 0;
+                    for (let i = 0; i < bufferLength; i++) {
+                        if (i < bufferLength / 2) lowFreq += dataArray[i];
+                        else highFreq += dataArray[i];
+                    }
+
+                    let emotion = (highFreq > lowFreq * 1.5) ? "happy" :
+                                  (lowFreq > highFreq * 1.5) ? "angry" : "calm";
+
+                    document.body.style.background = emotionColors[emotion];
+                    document.getElementById("status").textContent = `Эмоция: ${emotion}`;
+                }, 500);
+            })
+            .catch(() => alert("Нужно разрешить доступ к микрофону!"));
+    </script>
+</body>
+</html>
